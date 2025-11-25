@@ -48,7 +48,6 @@ application-local.yml
 # Documentation (keep local only)
 *.md
 !README.md
-!QUICK_START.md
 
 # Spec files (keep local only)
 .kiro/specs/
