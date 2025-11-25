@@ -53,6 +53,17 @@ application-local.yml
 # Spec files (keep local only)
 .kiro/specs/
 
+# Local scripts and guides (keep local only)
+BEGINNER_SETUP_CHECK.bat
+CHECK_STATUS.bat
+PUSH_TO_NEW_REPO.txt
+START_EVERYTHING.bat
+STOP_EVERYTHING.bat
+
+# Docker override files (keep local only)
+docker-compose.override.yml
+docker-compose-clean.yml
+
 # Error logs
 hs_err_pid*.log
 replay_pid*.log
