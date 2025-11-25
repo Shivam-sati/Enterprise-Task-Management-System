@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+.task-item {
+  @apply bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow;
+}
+
+.task-item.dragging {
+  @apply opacity-50 transform rotate-2;
+}
+
+.task-priority-high {
+  @apply border-l-4 border-l-red-500;
+}
+
+.task-priority-medium {
+  @apply border-l-4 border-l-yellow-500;
+}
+
+.task-priority-low {
+  @apply border-l-4 border-l-green-500;
+}
+
+.notification-toast {
+  @apply rounded-lg shadow-lg;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

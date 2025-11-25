@@ -1,0 +1,312 @@
+services:
+  # Infrastructure Services
+  redis:
+    image: redis:7.2-alpine
+    container_name: task-management-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - task-management-network
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: task-management-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - task-management-network
+
+  # Microservices
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - task-management-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - task-management-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    networks:
+      - task-management-network
+
+  task-service:
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
+    container_name: task-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - task-management-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=password
+    depends_on:
+      - eureka-server
+      - rabbitmq
+    networks:
+      - task-management-network
+
+  collaboration-service:
+    build:
+      context: ./collaboration-service
+      dockerfile: Dockerfile
+    container_name: collaboration-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - task-management-network
+
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+      - "9091:9091"  # Prometheus metrics port
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+      - SPRING_DATA_MONGODB_URI=${MONGODB_URI:-mongodb+srv://username:password@cluster0.mongodb.net/taskmanagement?retryWrites=true&w=majority&appName=Cluster0}
+      
+      # Analytics calculation settings
+      - ANALYTICS_CALCULATION_MIN_DATA_POINTS=${ANALYTICS_CALCULATION_MIN_DATA_POINTS:-5}
+      - ANALYTICS_CALCULATION_TREND_ANALYSIS_DAYS=${ANALYTICS_CALCULATION_TREND_ANALYSIS_DAYS:-30}
+      - ANALYTICS_CALCULATION_CACHE_TTL_MINUTES=${ANALYTICS_CALCULATION_CACHE_TTL_MINUTES:-15}
+      
+      # Analytics insights settings
+      - ANALYTICS_INSIGHTS_CONFIDENCE_THRESHOLD=${ANALYTICS_INSIGHTS_CONFIDENCE_THRESHOLD:-0.7}
+      - ANALYTICS_INSIGHTS_MAX_RECOMMENDATIONS=${ANALYTICS_INSIGHTS_MAX_RECOMMENDATIONS:-5}
+      
+      # Prediction settings
+      - ANALYTICS_PREDICTION_ENABLED=${ANALYTICS_PREDICTION_ENABLED:-true}
+      - ANALYTICS_PREDICTION_FORECAST_DAYS=${ANALYTICS_PREDICTION_FORECAST_DAYS:-7}
+      - ANALYTICS_PREDICTION_MODEL_ACCURACY_THRESHOLD=${ANALYTICS_PREDICTION_MODEL_ACCURACY_THRESHOLD:-0.8}
+      
+      # Resilience settings
+      - ANALYTICS_RESILIENCE_CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+      - ANALYTICS_RESILIENCE_CIRCUIT_BREAKER_TIMEOUT_SECONDS=10
+      - ANALYTICS_RESILIENCE_CIRCUIT_BREAKER_RETRY_ATTEMPTS=3
+      
+      # Observability settings
+      - ANALYTICS_OBSERVABILITY_METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - ANALYTICS_OBSERVABILITY_PROMETHEUS_PORT=9091
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - task-management-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-demo-key}
+      
+      # Python AI Service configuration
+      - AI_PYTHON_SERVICE_URL=http://ai-python-service:8087
+      - AI_PYTHON_SERVICE_ENABLED=true
+      - AI_PYTHON_SERVICE_TIMEOUT_SECONDS=30
+      
+      # Circuit breaker configuration
+      - RESILIENCE_CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+      - RESILIENCE_CIRCUIT_BREAKER_TIMEOUT_SECONDS=10
+      - RESILIENCE_RETRY_ATTEMPTS=3
+      - RESILIENCE_RETRY_DELAY_MS=1000
+      
+      # Fallback configuration
+      - AI_FALLBACK_ENABLED=true
+      - AI_FALLBACK_LOG_USAGE=true
+    depends_on:
+      - eureka-server
+      - redis
+      - ai-python-service
+    networks:
+      - task-management-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ai-python-service:
+    build:
+      context: ./ai-python-service
+      dockerfile: Dockerfile
+    container_name: ai-python-service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+      - "9090:9090"  # Prometheus metrics port
+    environment:
+      # Service configuration
+      - AI_SERVICE_SERVICE_NAME=ai-service-python
+      - AI_SERVICE_PORT=8087
+      - AI_SERVICE_DEBUG=${AI_SERVICE_DEBUG:-false}
+      
+      # Eureka configuration
+      - AI_SERVICE_EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - AI_SERVICE_EUREKA_ENABLED=true
+      - AI_SERVICE_EUREKA_RENEWAL_INTERVAL=30
+      - AI_SERVICE_EUREKA_DURATION=90
+      
+      # Model configuration
+      - AI_SERVICE_MODELS_PATH=/app/models
+      - AI_SERVICE_CACHE_SIZE=${MODEL_CACHE_SIZE:-100}
+      - AI_SERVICE_MODEL_TIMEOUT_SECONDS=${MODEL_TIMEOUT_SECONDS:-30}
+      
+      # Model versioning
+      - AI_SERVICE_DEFAULT_TASK_PARSER_MODEL=default
+      - AI_SERVICE_DEFAULT_PRIORITIZER_MODEL=default
+      - AI_SERVICE_DEFAULT_INSIGHTS_MODEL=default
+      
+      # Model management
+      - AI_SERVICE_AUTO_CLEANUP_ENABLED=true
+      - AI_SERVICE_MODEL_MAX_AGE_DAYS=30
+      - AI_SERVICE_MAX_LOADED_MODELS=5
+      
+      # Performance settings
+      - AI_SERVICE_MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
+      - AI_SERVICE_MEMORY_LIMIT_MB=${MEMORY_LIMIT_MB:-2048}
+      
+      # Redis configuration
+      - AI_SERVICE_REDIS_ENABLED=true
+      - AI_SERVICE_REDIS_HOST=redis
+      - AI_SERVICE_REDIS_PORT=6379
+      - AI_SERVICE_REDIS_TTL_SECONDS=3600
+      
+      # Observability
+      - AI_SERVICE_METRICS_ENABLED=${METRICS_ENABLED:-true}
+      - AI_SERVICE_PROMETHEUS_PORT=9090
+    volumes:
+      - ai_models:/app/models
+      - ai_cache:/app/cache
+      - ai_logs:/app/logs
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - task-management-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend
+  todo-react:
+    build:
+      context: ./todo-react
+      dockerfile: Dockerfile
+    container_name: todo-react
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - task-management-network
+
+volumes:
+  redis_data:
+  rabbitmq_data:
+  ai_models:
+  ai_cache:
+  ai_logs:
+
+networks:
+  task-management-network:
+    driver: bridge

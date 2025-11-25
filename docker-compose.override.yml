@@ -1,0 +1,83 @@
+# Development overrides for local development
+services:
+  redis:
+    command: redis-server --appendonly yes --loglevel debug
+
+  rabbitmq:
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+      - RABBITMQ_LOG_LEVEL=debug
+
+  # Development services with debug settings and volume mounts
+  eureka-server:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/eureka-server:/app/logs
+
+  api-gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+      - SPRING_CLOUD_GATEWAY_HTTPCLIENT_WIRETAP=true
+      - LOGGING_LEVEL_REACTOR_NETTY_HTTP_CLIENT=DEBUG
+    volumes:
+      - ./logs/api-gateway:/app/logs
+
+  auth-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/auth-service:/app/logs
+
+  task-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/task-service:/app/logs
+
+  notification-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/notification-service:/app/logs
+
+  collaboration-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/collaboration-service:/app/logs
+
+  analytics-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/analytics-service:/app/logs
+
+  ai-service:
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,dev
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_TASKMANAGEMENT=DEBUG
+    volumes:
+      - ./logs/ai-service:/app/logs
+
+  todo-react:
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./logs/todo-react:/var/log/nginx

@@ -1,0 +1,71 @@
+{
+  "model_definitions": {
+    "task_parser": {
+      "default": {
+        "versions": {
+          "v1": {
+            "model_source": "huggingface",
+            "model_id": "microsoft/DialoGPT-medium",
+            "description": "Default task parsing model using DialoGPT",
+            "memory_requirement_mb": 512,
+            "config": {
+              "max_length": 512,
+              "temperature": 0.7,
+              "top_p": 0.9,
+              "device": "cpu",
+              "precision": "float32"
+            }
+          }
+        },
+        "default_version": "v1"
+      }
+    },
+    "prioritizer": {
+      "default": {
+        "versions": {
+          "v1": {
+            "model_source": "huggingface", 
+            "model_id": "microsoft/DialoGPT-medium",
+            "description": "Default task prioritization model",
+            "memory_requirement_mb": 512,
+            "config": {
+              "max_length": 1024,
+              "temperature": 0.5,
+              "top_p": 0.8,
+              "device": "cpu",
+              "precision": "float32"
+            }
+          }
+        },
+        "default_version": "v1"
+      }
+    },
+    "insights": {
+      "default": {
+        "versions": {
+          "v1": {
+            "model_source": "huggingface",
+            "model_id": "microsoft/DialoGPT-medium", 
+            "description": "Default insights generation model",
+            "memory_requirement_mb": 512,
+            "config": {
+              "max_length": 1024,
+              "temperature": 0.6,
+              "top_p": 0.9,
+              "device": "cpu",
+              "precision": "float32"
+            }
+          }
+        },
+        "default_version": "v1"
+      }
+    }
+  },
+  "global_config": {
+    "cache_enabled": true,
+    "cache_size": 100,
+    "cache_ttl_seconds": 3600,
+    "timeout_seconds": 30,
+    "max_concurrent_requests": 10
+  }
+}

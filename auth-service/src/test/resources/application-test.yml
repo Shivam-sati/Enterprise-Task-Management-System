@@ -1,0 +1,24 @@
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 0 # Use random port for embedded MongoDB
+      database: test-taskmanagement
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+
+jwt:
+  secret: testSecretKeyForJWTTokenGenerationAndValidationThatShouldBeAtLeast256BitsLong
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+logging:
+  level:
+    com.taskmanagement.auth: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.data.mongodb: DEBUG
